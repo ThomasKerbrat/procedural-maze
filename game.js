@@ -5,7 +5,7 @@ class Game {
     }
 
     newGame() {
-        this.map = new Map({ width: 64, height: 64, maxFloorCount: 256 });
+        this.map = new Map({ width: 64, height: 64, maxFloorCount: 1024 });
         this.player = new Vector(this.map.entryPoint.x, this.map.entryPoint.y);
     }
 

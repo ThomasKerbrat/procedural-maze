@@ -15,9 +15,9 @@ class Map {
         }
 
         this.floorMakers = [];
-        this.turnResistance = 0.2;
-        this.maxFloorMakerCount = 5;
-        this.floorMakerSpawnProbability = 0.5;
+        this.turnResistance = 0.4;
+        this.maxFloorMakerCount = 20;
+        this.floorMakerSpawnProbability = 0.8;
         this.generate(maxFloorCount, this.maxFloorMakerCount, this.turnResistance, this.floorMakerSpawnProbability);
     }
 
