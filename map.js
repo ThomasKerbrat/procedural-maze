@@ -14,62 +14,79 @@ class Map {
             }
         }
 
-        this.floorMakers = [];
-        this.turnResistance = 0.4;
-        this.maxFloorMakerCount = 20;
-        this.floorMakerSpawnProbability = 0.8;
-        this.generate(maxFloorCount, this.maxFloorMakerCount, this.turnResistance, this.floorMakerSpawnProbability);
-    }
+        this.currentFloorMaker = null;
+        this.currentFloorMakerIndex = 0;
+        this.floorMakers = [new FloorMaker(this.entryPoint.clone(), Utility.randomInt(4) + 1)];
 
-    generate(maxFloorCount, maxFloorMakerCount, turnResistance, floorMakerSpawnProbability) {
-        let floorMaker = null;
-        let currentFloorMakerIndex = 0;
-        this.floorMakers.push(new FloorMaker(this.entryPoint.clone(), 0));
-
-        let floorCount = 1;
+        this.floorCount = 1;
         this.tiles[this.entryPoint.x][this.entryPoint.y] = TileType.floor;
 
-        // Generate the maze
-        while (floorCount < maxFloorCount && this.floorMakers.length > 0) {
-            floorMaker = this.floorMakers[currentFloorMakerIndex];
-            currentFloorMakerIndex = (currentFloorMakerIndex + 1) % this.floorMakers.length;
+        this.maxFloorCount = maxFloorCount;
+        this.turnResistance = 0.9;
+        this.maxFloorMakerCount = 5;
+        this.floorMakerSpawnProbability = 0.2;
+    }
 
-            let possibleWays = [];
-            if (floorMaker.direction === 0 || Math.random() <= turnResistance) {
-                if (this.canCreateFloor(floorMaker.currentPoint.x, floorMaker.currentPoint.y - 1)) { possibleWays.push(1); }
-                if (this.canCreateFloor(floorMaker.currentPoint.x + 1, floorMaker.currentPoint.y)) { possibleWays.push(2); }
-                if (this.canCreateFloor(floorMaker.currentPoint.x, floorMaker.currentPoint.y + 1)) { possibleWays.push(3); }
-                if (this.canCreateFloor(floorMaker.currentPoint.x - 1, floorMaker.currentPoint.y)) { possibleWays.push(4); }
-            } else {
-                const nextPointCandidate = floorMaker.nextPoint;
-                if (this.canCreateFloor(nextPointCandidate.x, nextPointCandidate.y)) {
-                    possibleWays.push(floorMaker.direction);
-                }
+    generate() {
+        while (this.floorCount < this.maxFloorCount && this.floorMakers.length > 0) {
+            this.generateStep();
+        }
+
+        this.exitPoint = this.currentFloorMaker.currentPoint;
+        this.generateWalls();
+    }
+
+    generateStep() {
+        if (!(this.floorCount < this.maxFloorCount && this.floorMakers.length > 0)) {
+            if (this.exitPoint === null) {
+                this.exitPoint = this.currentFloorMaker.currentPoint;
+                this.generateWalls();
             }
-
-            if (possibleWays.length === 0) {
-                console.log('stuck');
-                this.floorMakers.splice(currentFloorMakerIndex, 1);
-                currentFloorMakerIndex %= this.floorMakers.length;
-                continue;
+            if (this.floorMakers.length > 0) {
+                this.floorMakers.splice(0, this.floorMakers.length);
             }
+            return;
+        }
 
-            let nextPoint = null;
-            floorMaker.direction = possibleWays[Utility.randomInt(possibleWays.length)];
-            nextPoint = floorMaker.nextPoint;
+        this.currentFloorMaker = this.floorMakers[this.currentFloorMakerIndex];
+        this.currentFloorMakerIndex = (this.currentFloorMakerIndex + 1) % this.floorMakers.length;
 
-            this.tiles[nextPoint.x][nextPoint.y] = TileType.floor;
-            floorCount++;
-            floorMaker.currentPoint = nextPoint;
-
-            if (this.floorMakers.length < maxFloorMakerCount && Math.random() < floorMakerSpawnProbability) {
-                this.floorMakers.push(new FloorMaker(floorMaker.currentPoint.clone(), 0));
+        let directionCandidates = [];
+        if (this.currentFloorMaker.direction === 0 || Math.random() > this.turnResistance) {
+            // console.log(floorMaker.direction === 0 ? 'no direction' : 'turn');
+            if (this.canCreateFloor(this.currentFloorMaker.currentPoint.x, this.currentFloorMaker.currentPoint.y - 1)) { directionCandidates.push(1); }
+            if (this.canCreateFloor(this.currentFloorMaker.currentPoint.x + 1, this.currentFloorMaker.currentPoint.y)) { directionCandidates.push(2); }
+            if (this.canCreateFloor(this.currentFloorMaker.currentPoint.x, this.currentFloorMaker.currentPoint.y + 1)) { directionCandidates.push(3); }
+            if (this.canCreateFloor(this.currentFloorMaker.currentPoint.x - 1, this.currentFloorMaker.currentPoint.y)) { directionCandidates.push(4); }
+        } else {
+            const nextPointCandidate = this.currentFloorMaker.nextPoint;
+            if (this.canCreateFloor(nextPointCandidate.x, nextPointCandidate.y)) {
+                directionCandidates.push(this.currentFloorMaker.direction);
             }
         }
 
-        this.exitPoint = floorMaker.currentPoint;
+        if (directionCandidates.length === 0) {
+            console.log('stuck');
+            this.floorMakers.splice(this.floorMakers.indexOf(this.currentFloorMaker), 1);
+            this.currentFloorMakerIndex %= this.floorMakers.length;
+            return;
+        }
 
-        // Add surrounding walls
+        let nextPoint = null;
+        this.currentFloorMaker.direction = directionCandidates[Utility.randomInt(directionCandidates.length)];
+        nextPoint = this.currentFloorMaker.nextPoint;
+
+        this.tiles[nextPoint.x][nextPoint.y] = TileType.floor;
+        this.floorCount++;
+        this.currentFloorMaker.currentPoint = nextPoint;
+
+        if (this.floorMakers.length < this.maxFloorMakerCount && Math.random() < this.floorMakerSpawnProbability) {
+            // console.log('new floor maker');
+            this.floorMakers.push(new FloorMaker(this.currentFloorMaker.currentPoint.clone(), 0));
+        }
+    }
+
+    generateWalls() {
         for (let i = 0; i < this.width; i++) {
             for (let j = 0; j < this.height; j++) {
                 if (this.tiles[i][j] === TileType.floor) {
@@ -131,10 +148,19 @@ class Map {
             }
         }
 
-        context.beginPath();
-        context.arc(this.exitPoint.y * tileSize + (tileSize / 2), this.exitPoint.x * tileSize + (tileSize / 2), (tileSize / 3), 0, 2 * Math.PI);
-        context.strokeStyle = '#00f';
-        context.stroke();
-        context.closePath();
+        for (let i = 0; i < this.floorMakers.length; i++) {
+            context.strokeStyle = this.currentFloorMakerIndex === i ? '#0f0' : '#f00';
+            context.strokeRect(this.floorMakers[i].currentPoint.y * tileSize, this.floorMakers[i].currentPoint.x * tileSize, tileSize, tileSize);
+            context.font = '' + (tileSize - 5) + 'px Arial';
+            context.fillText(i.toString(), this.floorMakers[i].currentPoint.y * tileSize, (this.floorMakers[i].currentPoint.x + 1) * tileSize);
+        }
+
+        if (this.exitPoint !== null) {
+            context.beginPath();
+            context.arc(this.exitPoint.y * tileSize + (tileSize / 2), this.exitPoint.x * tileSize + (tileSize / 2), (tileSize / 3), 0, 2 * Math.PI);
+            context.strokeStyle = '#00f';
+            context.stroke();
+            context.closePath();
+        }
     }
 }
