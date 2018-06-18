@@ -1,5 +1,5 @@
 
-const tileSize = 20;
+const tileSize = 10;
 const game = new Game();
 
 window.addEventListener('load', function () {
