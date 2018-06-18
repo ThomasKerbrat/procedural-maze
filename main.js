@@ -27,9 +27,9 @@ window.addEventListener('keydown', function (event) {
     game.render(context);
 });
 
-// setInterval(function () {
-//     game.map.generateStep();
-//     const canvasElement = document.querySelector('#maze-canvas');
-//     const context = canvasElement.getContext('2d');
-//     game.render(context);
-// }, 10);
+setInterval(function () {
+    game.map.generateStep();
+    const canvasElement = document.querySelector('#maze-canvas');
+    const context = canvasElement.getContext('2d');
+    game.render(context);
+}, 10);

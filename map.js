@@ -3,7 +3,7 @@ class Map {
     constructor({ width, height, maxFloorCount }) {
         this.width = width;
         this.height = height;
-        this.entryPoint = new Vector(Utility.randomInt(this.width), Utility.randomInt(this.height));
+        this.entryPoint = new Vector(Utility.randomInt(this.width / 2) + (this.width / 4), Utility.randomInt(this.height / 2) + (this.height / 4));
         this.exitPoint = null;
 
         this.tiles = [];
