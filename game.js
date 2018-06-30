@@ -1,30 +1,42 @@
 
 class Game {
-    constructor() {
+    constructor(width, height) {
         this.map = null;
         this.player = null;
+        this.width = width;
+        this.height = height;
     }
 
     newGame() {
-        this.map = new Map({ width: 64, height: 64, maxFloorCount: 512 });
+        this.map = new Map({ width: this.width, height: this.height, maxFloorCount: 2048 });
         this.map.generate();
         this.player = new Vector(this.map.entryPoint.x, this.map.entryPoint.y);
     }
 
     newGameByStep() {
-        this.map = new Map({ width: 64, height: 64, maxFloorCount: 512 });
+        this.map = new Map({ width: this.width, height: this.height, maxFloorCount: 2048 });
         this.player = new Vector(this.map.entryPoint.x, this.map.entryPoint.y);
     }
 
-    render(context) {
+    /**
+     * @param {CanvasRenderingContext2D} context
+     * @param {CanvasPlayground} canvasPlayground
+     */
+    render(context, canvasPlayground) {
         if (this.map === null) { return; }
 
         context.fillStyle = '#000';
-        context.fillRect(0, 0, this.map.width * 20, this.map.height * 20);
-        this.map.render(context);
+        context.fillRect(0, 0, this.map.width * tileSize, this.map.height * tileSize);
+        this.map.render(context, canvasPlayground);
 
         context.beginPath();
-        context.arc(this.player.y * tileSize + (tileSize / 2), this.player.x * tileSize + (tileSize / 2), (tileSize / 3), 0, 2 * Math.PI);
+        context.arc(
+            canvasPlayground.playground.scaleX(this.player.y * tileSize + (tileSize / 2)),
+            canvasPlayground.playground.scaleY(this.player.x * tileSize + (tileSize / 2)),
+            canvasPlayground.playground.scale(tileSize / 3),
+            0,
+            2 * Math.PI
+        );
         context.fillStyle = '#00f';
         context.fill();
         context.closePath();

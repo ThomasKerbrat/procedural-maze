@@ -3,14 +3,14 @@ class Map {
     constructor({ width, height, maxFloorCount }) {
         this.width = width;
         this.height = height;
-        this.entryPoint = new Vector(Utility.randomInt(this.width / 2) + (this.width / 4), Utility.randomInt(this.height / 2) + (this.height / 4));
+        this.entryPoint = new Vector(0, 0);
         this.exitPoint = null;
 
         this.tiles = [];
-        for (let i = 0; i < this.width; i++) {
-            this.tiles[i] = [];
-            for (let j = 0; j < this.height; j++) {
-                this.tiles[i][j] = TileType.none;
+        for (let y = 0; y < this.height; y++) {
+            this.tiles[y] = [];
+            for (let x = 0; x < this.width; x++) {
+                this.tiles[y][x] = TileType.none;
             }
         }
 
@@ -19,10 +19,10 @@ class Map {
         this.floorMakers = [new FloorMaker(this.entryPoint.clone(), Utility.randomInt(4) + 1)];
 
         this.floorCount = 1;
-        this.tiles[this.entryPoint.x][this.entryPoint.y] = TileType.floor;
+        this.tiles[this.entryPoint.y][this.entryPoint.x] = TileType.floor;
 
         this.maxFloorCount = maxFloorCount;
-        this.turnResistance = 0.9;
+        this.turnResistance = 0.95;
         this.maxFloorMakerCount = 5;
         this.floorMakerSpawnProbability = 0.2;
     }
@@ -76,7 +76,7 @@ class Map {
         this.currentFloorMaker.direction = directionCandidates[Utility.randomInt(directionCandidates.length)];
         nextPoint = this.currentFloorMaker.nextPoint;
 
-        this.tiles[nextPoint.x][nextPoint.y] = TileType.floor;
+        this.tiles[nextPoint.y][nextPoint.x] = TileType.floor;
         this.floorCount++;
         this.currentFloorMaker.currentPoint = nextPoint;
 
@@ -87,14 +87,17 @@ class Map {
     }
 
     generateWalls() {
-        for (let i = 0; i < this.width; i++) {
-            for (let j = 0; j < this.height; j++) {
+        for (let i = 0; i < this.height; i++) {
+            for (let j = 0; j < this.width; j++) {
                 if (this.tiles[i][j] === TileType.floor) {
                     for (let k = -1; k <= 1; k++) {
                         for (let l = -1; l <= 1; l++) {
-                            const _x = i - k, _y = j - l;
-                            if (!(k === 0 && l === 0) && this.areValidCoordinates(_x, _y) && this.tiles[_x][_y] !== TileType.floor) {
-                                this.tiles[_x][_y] = TileType.wall;
+                            if (!(k === 0 && l === 0)) {
+                                const _y = i + k;
+                                const _x = j + l;
+                                if (this.areValidCoordinates(_x, _y) && this.tiles[_y][_x] !== TileType.floor) {
+                                    this.tiles[_y][_x] = TileType.wall;
+                                }
                             }
                         }
                     }
@@ -104,60 +107,59 @@ class Map {
     }
 
     canCreateFloor(x, y) {
-        return this.areValidCoordinates(x, y) && this.tiles[x][y] === TileType.none;
+        return this.areValidCoordinates(x, y) && this.tiles[y][x] === TileType.none;
     }
 
     areValidCoordinates(x, y) {
         return x >= 0 && x < this.width && y >= 0 && y < this.height;
     }
 
-    _displayConsole() {
-        const stringBuilder = [];
-        const tileString = {};
-        tileString[TileType.none] = ' ';
-        tileString[TileType.floor] = '.';
-        tileString[TileType.wall] = 'X';
-
-        for (let i = 0; i < this.width; i++) {
-            for (let j = 0; j < this.height; j++) {
-                if (i === this.entryPoint.x && j === this.entryPoint.y) {
-                    stringBuilder.push('+');
-                } else if (i === this.exitPoint.x && j === this.exitPoint.y) {
-                    stringBuilder.push('*');
-                } else {
-                    stringBuilder.push(tileString[this.tiles[i][j]]);
+    /**
+     * @param {CanvasRenderingContext2D} context
+     * @param {CanvasPlayground} canvasPlayground
+     */
+    render(context, canvasPlayground) {
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                if (this.tiles[y][x] == TileType.none) {
+                    continue;
                 }
-            }
-            stringBuilder.push('\n');
-        }
 
-        console.log(stringBuilder.join(''));
-    }
-
-    render(context) {
-        for (let i = 0; i < this.width; i++) {
-            for (let j = 0; j < this.height; j++) {
-                let color = '#000';
-                if (this.tiles[i][j] === TileType.floor) {
+                let color;
+                if (this.tiles[y][x] === TileType.floor) {
                     color = '#999';
-                } else if (this.tiles[i][j] === TileType.wall) {
+                } else if (this.tiles[y][x] === TileType.wall) {
                     color = '#777';
                 }
                 context.fillStyle = color;
-                context.fillRect(j * tileSize, i * tileSize, tileSize, tileSize);
+                context.fillRect(
+                    canvasPlayground.playground.scaleX(x * tileSize),
+                    canvasPlayground.playground.scaleY(y * tileSize),
+                    canvasPlayground.playground.scale(tileSize),
+                    canvasPlayground.playground.scale(tileSize)
+                );
             }
         }
 
-        for (let i = 0; i < this.floorMakers.length; i++) {
-            context.strokeStyle = this.currentFloorMakerIndex === i ? '#0f0' : '#f00';
-            context.strokeRect(this.floorMakers[i].currentPoint.y * tileSize, this.floorMakers[i].currentPoint.x * tileSize, tileSize, tileSize);
-            context.font = '' + (tileSize - 5) + 'px Arial';
-            context.fillText(i.toString(), this.floorMakers[i].currentPoint.y * tileSize, (this.floorMakers[i].currentPoint.x + 1) * tileSize);
+        for (let floorMaker of this.floorMakers) {
+            context.strokeStyle = '#f00';
+            context.strokeRect(
+                canvasPlayground.playground.scaleX(floorMaker.currentPoint.x * tileSize),
+                canvasPlayground.playground.scaleY(floorMaker.currentPoint.y * tileSize),
+                canvasPlayground.playground.scale(tileSize),
+                canvasPlayground.playground.scale(tileSize)
+            );
         }
 
         if (this.exitPoint !== null) {
             context.beginPath();
-            context.arc(this.exitPoint.y * tileSize + (tileSize / 2), this.exitPoint.x * tileSize + (tileSize / 2), (tileSize / 3), 0, 2 * Math.PI);
+            context.arc(
+                canvasPlayground.playground.scaleX(this.exitPoint.x * tileSize + (tileSize / 2)),
+                canvasPlayground.playground.scaleY(this.exitPoint.y * tileSize + (tileSize / 2)),
+                canvasPlayground.playground.scale(tileSize / 3),
+                0,
+                2 * Math.PI
+            );
             context.strokeStyle = '#00f';
             context.stroke();
             context.closePath();

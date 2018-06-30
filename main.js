@@ -1,16 +1,38 @@
 
 const tileSize = 10;
-const game = new Game();
-// game.newGame();
-game.newGameByStep();
+
+let canvasPlayground;
+let game;
 
 window.addEventListener('load', function () {
     const canvasElement = document.querySelector('#maze-canvas');
     const context = canvasElement.getContext('2d');
-    canvasElement.setAttribute('width', 640);
-    canvasElement.setAttribute('height', 640);
 
-    game.render(context);
+    const width = Math.floor((this.document.body.clientWidth - 20) / tileSize);
+    const height = Math.floor((this.document.body.clientHeight - 20) / tileSize);
+
+    canvasElement.setAttribute('width', width * tileSize);
+    canvasElement.setAttribute('height', height * tileSize);
+
+    game = new Game(width, height);
+    // game.newGame();
+    game.newGameByStep();
+
+    canvasPlayground = new CanvasPlayground(canvasElement);
+    game.render(context, canvasPlayground);
+
+    setInterval(function () {
+        game.map.generateStep();
+    }, 0);
+
+    requestAnimationFrame(renderGame);
+    function renderGame() {
+        requestAnimationFrame(renderGame);
+    
+        const canvasElement = document.querySelector('#maze-canvas');
+        const context = canvasElement.getContext('2d');
+        game.render(context, canvasPlayground);
+    }
 });
 
 window.addEventListener('keydown', function (event) {
@@ -24,12 +46,5 @@ window.addEventListener('keydown', function (event) {
 
     const canvasElement = document.querySelector('#maze-canvas');
     const context = canvasElement.getContext('2d');
-    game.render(context);
+    game.render(context, canvasPlayground);
 });
-
-setInterval(function () {
-    game.map.generateStep();
-    const canvasElement = document.querySelector('#maze-canvas');
-    const context = canvasElement.getContext('2d');
-    game.render(context);
-}, 10);
